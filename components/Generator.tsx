@@ -452,8 +452,9 @@ export default function Generator({ accessState, configured }: { accessState: Ac
       <section className="flex flex-col gap-5 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5">
         {!configured && (
           <p className="rounded-lg border border-amber-700 bg-amber-950/50 p-3 text-sm text-amber-200">
-            La variable <code>FAL_KEY</code> n&apos;est pas définie sur le serveur : ajoutez-la dans
-            Vercel (Settings → Environment Variables), puis redéployez.
+            Génération en ligne désactivée : pas de clé fal.ai (<code>FAL_KEY</code>) sur le serveur. Vous pouvez
+            toujours déposer ici un fichier <code>.glb</code> généré sur votre PC (voir
+            <code>docs/generer-sur-mon-pc.md</code>) pour en faire un buste imprimable, sans rien payer.
           </p>
         )}
         {blocked && (

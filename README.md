@@ -24,6 +24,12 @@ navigateur ──toutes les 2,5 s──▶ /api/status (Vercel) ──▶ fal.ai
 - L'historique (12 derniers modèles) est gardé dans le navigateur. Les fichiers sont
   hébergés par fal.ai et peuvent expirer.
 
+## Gratuit : générer sur son PC
+
+Sans fal.ai, le modèle 3D peut être généré sur un PC avec ComfyUI (TRELLIS.2
+intégré), puis déposé en `.glb` sur le site pour en faire le buste. Marche à
+suivre pas à pas : [docs/generer-sur-mon-pc.md](docs/generer-sur-mon-pc.md).
+
 ## Buste imprimable
 
 TRELLIS.2 ne rend que la peau de ce que la photo montre : le dessous est
