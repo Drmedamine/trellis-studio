@@ -35,7 +35,7 @@ export function failure(error: unknown) {
   console.error(`fal.ai, ${where}${code} : ${detail}`);
 
   if (status === 401) {
-    return reply(`fal.ai ne reconnaît pas la clé${code}, à l'étape « ${where} ». Vérifiez que FAL_KEY dans Vercel est bien la clé en cours (pas une clé supprimée), puis redéployez.`);
+    return reply(`fal.ai ne reconnaît pas la clé${code}, à l'étape « ${where} ». ${keyHint()}`);
   }
   if (status === 403) {
     return reply(`fal.ai refuse cette action à la clé${code}, à l'étape « ${where} » : ${detail}`);
@@ -44,6 +44,19 @@ export function failure(error: unknown) {
     return reply("Crédit fal.ai épuisé : rechargez votre compte sur fal.ai.");
   }
   return reply(`Échec chez fal.ai${code}, à l'étape « ${where} » : ${detail}`);
+}
+
+/**
+ * Une clé fal complète s'écrit « identifiant:secret ». L'identifiant seul est
+ * ce que montre la liste des clés, et c'est lui qu'on recopie par erreur : le
+ * secret ne s'affiche qu'une fois, à la création. On le dit sans rien citer
+ * de la clé.
+ */
+function keyHint(): string {
+  if (!falKey().includes(":")) {
+    return "FAL_KEY ne contient que l'identifiant de la clé (sans « : »). La clé complète s'écrit identifiant:secret et ne s'affiche qu'une fois, à sa création : créez-en une, copiez toute la valeur montrée, collez-la dans Vercel et redéployez.";
+  }
+  return "Vérifiez que FAL_KEY dans Vercel est bien la clé en cours (pas une clé supprimée), puis redéployez.";
 }
 
 function reply(message: string) {
