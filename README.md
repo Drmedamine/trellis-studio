@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trellis Studio
 
-## Getting Started
+Une image → un modèle 3D texturé, avec [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (Microsoft).
+Visionneuse 3D dans la page, export **GLB**, et export **STL** prêt pour un slicer
+(Z en haut, posé sur le plateau, mis à la hauteur voulue en mm).
 
-First, run the development server:
+## Comment ça marche
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+TRELLIS.2 demande un GPU NVIDIA de 24 Go : impossible sur Vercel. Le site ne
+fait donc que l'interface et deux petites routes ; le calcul part chez
+[fal.ai](https://fal.ai/models/fal-ai/trellis-2), payé à la génération.
+
+```
+navigateur ──image──▶ /api/generate (Vercel) ──▶ fal.ai : stockage + file d'attente
+navigateur ──toutes les 2,5 s──▶ /api/status (Vercel) ──▶ fal.ai : état, puis URL du GLB
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- La clé `FAL_KEY` reste sur le serveur ; le navigateur ne la voit jamais.
+- Le modèle appelé est fixé côté serveur (`fal-ai/trellis-2`) et chaque option est validée :
+  la route ne peut pas servir à lancer un autre modèle sur votre compte.
+- L'image est réduite à 1024 px dans le navigateur avant l'envoi (Vercel limite le corps à 4,5 Mo).
+- Aucune requête ne reste ouverte pendant la génération : le suivi se fait par
+  interrogations courtes, ce qui tient dans les limites des fonctions Vercel gratuites.
+- L'historique (12 derniers modèles) est gardé dans le navigateur. Les fichiers sont
+  hébergés par fal.ai et peuvent expirer.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Mise en ligne sur Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Créez une clé sur <https://fal.ai/dashboard/keys> et ajoutez du crédit.
+2. Sur <https://vercel.com/new>, importez ce dépôt (framework détecté : Next.js).
+3. Dans **Environment Variables**, ajoutez :
+   - `FAL_KEY` — la clé fal.ai (obligatoire) ;
+   - `ACCESS_CODE` — un mot de passe (**fortement conseillé**) : sans lui, n'importe
+     qui trouvant l'adresse peut générer à vos frais.
+4. **Deploy**. Les variables sont lues à chaque requête : les changer ne demande qu'un
+   redéploiement, pas de modification du code.
 
-## Learn More
+Coût indicatif chez fal.ai : quelques dizaines de centimes par modèle selon la
+résolution — vérifiez le tarif actuel sur la page du modèle.
 
-To learn more about Next.js, take a look at the following resources:
+## En local
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cp .env.example .env.local   # puis remplir FAL_KEY
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Options
 
-## Deploy on Vercel
+| Option | Effet |
+| --- | --- |
+| Résolution (512³ / 1024³ / 1536³) | Détail de la géométrie ; plus haut = plus lent et plus cher |
+| Texture (1024 / 2048 / 4096 px) | Finesse de la texture du GLB |
+| Sommets (20k … 500k) | Poids du fichier ; 20k–50k pour le web, 200k+ pour l'impression |
+| Remaillage propre | Triangles plus réguliers, conseillé pour l'impression 3D |
+| Graine | Même image + même graine = même résultat |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Pour un meilleur résultat : un seul objet, bien éclairé, sur fond uni ou transparent (PNG).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Licences
+
+Code de ce site : MIT. TRELLIS.2 : MIT (Microsoft). Les images envoyées sont transmises à fal.ai.
