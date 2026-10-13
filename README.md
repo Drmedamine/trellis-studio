@@ -24,6 +24,28 @@ navigateur ──toutes les 2,5 s──▶ /api/status (Vercel) ──▶ fal.ai
 - L'historique (12 derniers modèles) est gardé dans le navigateur. Les fichiers sont
   hébergés par fal.ai et peuvent expirer.
 
+## Buste imprimable
+
+TRELLIS.2 ne rend que la peau de ce que la photo montre : le dessous est
+ouvert et les vêtements sont des feuilles sans épaisseur. Un slicer ne sait
+pas remplir un tel objet. Le panneau « Buste imprimable » le reconstruit,
+dans le navigateur (`lib/bust/solidify.ts`, dans un worker) :
+
+1. la peau est posée dans une grille de voxels, au-dessus de la coupe choisie ;
+2. l'extérieur est ce qu'on atteint par les côtés et le dessus sans passer par
+   un trou de moins de 5 mm ; le plan de coupe ferme le dessous, donc la tête
+   se remplit ;
+3. les parois minces (vêtements) reçoivent 1,2 mm d'épaisseur au moins ;
+4. un socle de 4 mm est ajouté, seul le plus grand morceau est gardé, et la
+   surface est refaite par marching cubes sur le volume lissé.
+
+Le résultat est un seul volume plein et fermé : chaque arête sert exactement
+deux triangles, en sens opposés. `npm test` le vérifie sur un faux modèle qui a
+les trois défauts de TRELLIS.2 (dessous ouvert, trou, feuille sans épaisseur).
+
+La texture ne passe pas dans le STL, et les détails plus fins que la finesse
+choisie (0,4 à 0,8 mm) sont lissés.
+
 ## Mise en ligne sur Vercel
 
 1. Créez une clé sur <https://fal.ai/dashboard/keys> et ajoutez du crédit.
@@ -44,6 +66,7 @@ résolution — vérifiez le tarif actuel sur la page du modèle.
 cp .env.example .env.local   # puis remplir FAL_KEY
 npm install
 npm run dev
+npm run check   # lint, types et tests
 ```
 
 ## Options

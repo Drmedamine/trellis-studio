@@ -21,6 +21,7 @@ import {
 } from "@/lib/store";
 
 const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
+const BustPanel = dynamic(() => import("./BustPanel"), { ssr: false });
 
 type Phase =
   | { kind: "idle" }
@@ -43,6 +44,7 @@ export default function Generator({ needsCode, configured }: { needsCode: boolea
   const [dragging, setDragging] = useState(false);
   const [heightMm, setHeightMm] = useState(100);
   const [exporting, setExporting] = useState(false);
+  const [bustPreview, setBustPreview] = useState<string | null>(null);
   const accessCode = useAccessCode();
   const history = useHistory();
   const cancelled = useRef(false);
@@ -280,7 +282,7 @@ export default function Generator({ needsCode, configured }: { needsCode: boolea
       <section className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950">
         <div className="relative flex-1">
           {result ? (
-            <ModelViewer src={result.glbUrl} alt="Modèle généré" />
+            <ModelViewer src={bustPreview ?? result.glbUrl} alt={bustPreview ? "Buste imprimable" : "Modèle généré"} />
           ) : (
             <div className="grid h-full place-items-center p-8 text-center text-sm text-zinc-500">
               {busy ? <Spinner /> : "Le modèle apparaîtra ici."}
@@ -315,9 +317,12 @@ export default function Generator({ needsCode, configured }: { needsCode: boolea
               disabled={exporting}
               className="rounded-lg border border-zinc-600 px-3 py-2 font-medium text-zinc-100 hover:border-zinc-400 disabled:opacity-50"
             >
-              {exporting ? "Conversion…" : "Télécharger STL"}
+              {exporting ? "Conversion…" : "Télécharger STL brut"}
             </button>
           </div>
+        )}
+        {result && (
+          <BustPanel key={result.id} glbUrl={result.glbUrl} name={`trellis-${result.id.slice(0, 8)}`} onPreview={setBustPreview} />
         )}
       </section>
 
