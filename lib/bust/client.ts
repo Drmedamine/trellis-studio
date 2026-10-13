@@ -1,4 +1,4 @@
-import type { SolidifyInput, SolidifyOutput } from "./solidify";
+import { extentAboveCut, plannedVoxel, type SolidifyInput, type SolidifyOutput } from "./solidify";
 
 /** Le maillage du GLB, en un seul bloc, Z en haut (unités du fichier). */
 export type RawMesh = {
@@ -9,15 +9,24 @@ export type RawMesh = {
 };
 
 const cache = new Map<string, Promise<RawMesh>>();
+// Un maillage TRELLIS lu pèse jusqu'à une vingtaine de Mo : on n'en garde que quelques-uns.
+const CACHE_MAX = 3;
 
 /** Charge le GLB une fois par adresse ; three n'est chargé qu'ici, au besoin. */
 export function loadRawMesh(url: string): Promise<RawMesh> {
+  // Un GLB ouvert depuis l'appareil a une adresse blob: neuve, rendue dès qu'on
+  // passe à autre chose : la garder ne servirait jamais, et tiendrait la mémoire.
+  if (url.startsWith("blob:")) return readGlb(url);
   let p = cache.get(url);
-  if (!p) {
+  if (p) {
+    // Le plus récemment servi passe en dernier : c'est le plus ancien qui part.
+    cache.delete(url);
+  } else {
     p = readGlb(url);
     p.catch(() => cache.delete(url));
-    cache.set(url, p);
   }
+  cache.set(url, p);
+  while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!);
   return p;
 }
 
@@ -77,6 +86,61 @@ export type BustSettings = {
 };
 
 export const BASE_THICKNESS = 4;
+/** Débord du socle autour de l'empreinte de la coupe, en mm. */
+export const BASE_MARGIN = 3;
+/** Épaisseur minimale donnée aux parties minces (vêtements), en mm. */
+export const MIN_WALL = 1.2;
+
+/**
+ * Diamètre des trous bouchés (mm) : 6 % de la hauteur gardée, entre 3 et
+ * 8 mm. Proportionnel parce que TRELLIS.2 rend un modèle de taille unitaire :
+ * ses défauts grandissent avec le buste imprimé. Les creux (orbites, narines)
+ * n'en dépendent pas — l'extérieur y revient jusqu'à la peau —, seuls les
+ * trous : on peut donc boucher large sans rien perdre du visage. Trop petit,
+ * c'était le contraire : un trou de 5 mm au sommet d'un buste de 10 cm
+ * laissait entrer l'extérieur et la tête sortait creuse, une coque de 1,2 mm.
+ */
+export function gapCloseFor(keptHeight: number): number {
+  return Math.min(8, Math.max(3, 0.06 * keptHeight));
+}
+
+/** Mise à l'échelle : la partie gardée + le socle = la hauteur voulue. */
+function frame(raw: RawMesh, settings: BustSettings) {
+  const zmin = raw.min[2], zmax = raw.max[2];
+  const cutRaw = zmin + settings.cut * (zmax - zmin);
+  const base = settings.base ? BASE_THICKNESS : 0;
+  const scale = (settings.heightMm - base) / (zmax - cutRaw);
+  return {
+    scale,
+    cutZ: cutRaw * scale,
+    params: {
+      voxel: settings.voxel,
+      baseThickness: base,
+      baseMargin: BASE_MARGIN,
+      gapClose: gapCloseFor(settings.heightMm - base),
+      minWall: MIN_WALL,
+    },
+  };
+}
+
+/** Ce que `makeBust` envoie au worker : le modèle à l'échelle, et les réglages. */
+export function bustInput(raw: RawMesh, settings: BustSettings): Omit<SolidifyInput, "onProgress"> {
+  const { scale, cutZ, params } = frame(raw, settings);
+  const positions = new Float32Array(raw.positions.length);
+  for (let i = 0; i < positions.length; i++) positions[i] = raw.positions[i] * scale;
+  return { positions, indices: raw.indices.slice(), cutZ, ...params };
+}
+
+/**
+ * La finesse que le calcul emploiera vraiment (mm), sans rien calculer :
+ * grossie si le buste ne tient pas en mémoire. Même grille que `solidify`.
+ */
+export function plannedBustVoxel(raw: RawMesh, settings: BustSettings): number {
+  const { scale, cutZ, params } = frame(raw, settings);
+  const e = extentAboveCut(raw.positions, raw.indices, cutZ, scale);
+  if (!(e.zmax > cutZ)) return settings.voxel;
+  return plannedVoxel(e.xmax - e.xmin, e.ymax - e.ymin, e.zmax - cutZ, params);
+}
 
 /** Met le modèle à l'échelle (la partie gardée + le socle = la hauteur voulue) puis le solidifie. */
 export function makeBust(
@@ -84,23 +148,7 @@ export function makeBust(
   settings: BustSettings,
   onProgress: (fraction: number, step: string) => void,
 ): Promise<SolidifyOutput> {
-  const zmin = raw.min[2], zmax = raw.max[2];
-  const cutRaw = zmin + settings.cut * (zmax - zmin);
-  const base = settings.base ? BASE_THICKNESS : 0;
-  const scale = (settings.heightMm - base) / (zmax - cutRaw);
-  const positions = new Float32Array(raw.positions.length);
-  for (let i = 0; i < positions.length; i++) positions[i] = raw.positions[i] * scale;
-
-  const input: Omit<SolidifyInput, "onProgress"> = {
-    positions,
-    indices: raw.indices.slice(),
-    cutZ: cutRaw * scale,
-    voxel: settings.voxel,
-    baseThickness: base,
-    baseMargin: 3,
-    gapClose: 5,
-    minWall: 1.2,
-  };
+  const input = bustInput(raw, settings);
 
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("./bust.worker.ts", import.meta.url), { type: "module" });

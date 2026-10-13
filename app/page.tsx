@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import Generator from "@/components/Generator";
-import { accessRequired } from "@/lib/access";
+import { accessState, type AccessState } from "@/lib/access";
+import { falConfigured } from "@/lib/fal";
 
 export default function Home() {
   return (
@@ -33,5 +34,13 @@ export default function Home() {
 // Lu à la requête : changer FAL_KEY ou ACCESS_CODE dans Vercel ne demande pas de reconstruire.
 async function GeneratorWithConfig() {
   await connection();
-  return <Generator needsCode={accessRequired()} configured={Boolean(process.env.FAL_KEY)} />;
+  const state = accessState();
+  // needsCode reste envoyé à côté d'accessState : il en est tiré, les deux ne
+  // peuvent pas se contredire.
+  const props: { accessState: AccessState; needsCode: boolean; configured: boolean } = {
+    accessState: state,
+    needsCode: state === "required",
+    configured: falConfigured(),
+  };
+  return <Generator {...props} />;
 }
