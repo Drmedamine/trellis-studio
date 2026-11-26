@@ -7,11 +7,15 @@ import { falConfigured } from "@/lib/fal";
 export default function Home() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Trellis Studio</h1>
-        <p className="mt-1 text-zinc-400">
-          Une image → un modèle 3D texturé, avec TRELLIS.2 de Microsoft. Export GLB, et STL pour l&apos;impression.
-        </p>
+      <header className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Trellis Studio</h1>
+          <p className="mt-1 text-zinc-400">
+            Une image → un modèle 3D texturé, avec TRELLIS.2 de Microsoft. Export GLB, et STL pour l&apos;impression.
+          </p>
+        </div>
+        {/* Les autres applications 3ddeal : le bouton vient de https://3ddeal.com/nav.js (page sombre). */}
+        <span className="shrink-0" data-3ddeal-nav="" data-theme="dark" />
       </header>
       <Suspense fallback={<div className="h-[520px] animate-pulse rounded-2xl bg-zinc-900" />}>
         <GeneratorWithConfig />
