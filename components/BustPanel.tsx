@@ -276,7 +276,7 @@ export default function BustPanel({
                 <>
                   <button
                     onClick={download}
-                    className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-white"
+                    className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-zinc-50"
                   >
                     Télécharger le STL du buste
                   </button>
