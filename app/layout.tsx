@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Script from "next/script";
+import ThemeScript from "@/components/ThemeScript";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +16,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="fr" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col">
+        {/* Le thème choisi sur un site 3ddeal, posé avant la première peinture. */}
+        <ThemeScript />
         {children}
         {/* Le bouton « 3ddeal » : passer d'une application a l'autre. */}
         <Script src="https://3ddeal.com/nav.js" strategy="afterInteractive" />

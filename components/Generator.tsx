@@ -647,7 +647,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => resume(waiting)}
-                  className="rounded-lg bg-amber-500 px-3 py-1.5 font-medium text-zinc-950 hover:bg-amber-400"
+                  className="rounded-lg bg-amber-500 px-3 py-1.5 font-medium text-black hover:bg-amber-400"
                 >
                   Reprendre le suivi
                 </button>
@@ -731,7 +731,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                 download
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-white"
+                className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-zinc-50"
               >
                 Télécharger GLB
               </a>

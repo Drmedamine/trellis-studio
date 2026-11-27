@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import Generator from "@/components/Generator";
+import ThemeToggle from "@/components/ThemeToggle";
 import { accessState, type AccessState } from "@/lib/access";
 import { falConfigured } from "@/lib/fal";
 
@@ -14,8 +15,11 @@ export default function Home() {
             Une image → un modèle 3D texturé, avec TRELLIS.2 de Microsoft. Export GLB, et STL pour l&apos;impression.
           </p>
         </div>
-        {/* Les autres applications 3ddeal : le bouton vient de https://3ddeal.com/nav.js (page sombre). */}
-        <span className="shrink-0" data-3ddeal-nav="" data-theme="dark" />
+        {/* Clair ou sombre, et les autres applications 3ddeal (https://3ddeal.com/nav.js). */}
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle />
+          <span data-3ddeal-nav="" />
+        </div>
       </header>
       <Suspense fallback={<div className="h-[520px] animate-pulse rounded-2xl bg-zinc-900" />}>
         <GeneratorWithConfig />
