@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 // Types seuls : le module (et three avec lui) n'est chargé qu'à l'ouverture du panneau.
 import type * as Bust from "@/lib/bust/client";
 import NumberField, { type NumberFieldHandle } from "./NumberField";
+import { locale, tr, useLang } from "@/lib/i18n";
 
 const FINESSES = [
   { label: "Rapide", voxel: 0.8 },
@@ -65,6 +66,7 @@ export default function BustPanel({
   /** La hauteur à employer, saisie en cours comprise, dans ce champ ou celui du STL brut. */
   commitHeight: () => number;
 }) {
+  useLang();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [cut, setCut] = useState(0.3);
@@ -178,13 +180,13 @@ export default function BustPanel({
   return (
     <div className="border-t border-zinc-800 p-4 text-sm">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <h2 className="font-medium text-zinc-100">Buste imprimable</h2>
-        <span className="text-xs text-zinc-500">Plein, fermé, posé sur un socle — calculé dans votre navigateur.</span>
+        <h2 className="font-medium text-zinc-100">{tr("Buste imprimable")}</h2>
+        <span className="text-xs text-zinc-500">{tr("Plein, fermé, posé sur un socle — calculé dans votre navigateur.")}</span>
       </div>
 
       {loadError ? (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-red-400">✗ {loadError}</p>
+          <p className="text-red-400">✗ {tr(loadError)}</p>
           {!glbUrl.startsWith("blob:") && (
             <button
               onClick={() => {
@@ -193,19 +195,19 @@ export default function BustPanel({
               }}
               className="rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-200 hover:border-zinc-500"
             >
-              Réessayer
+              {tr("Réessayer")}
             </button>
           )}
         </div>
       ) : !loaded ? (
-        <p className="text-zinc-500">Lecture du modèle…</p>
+        <p className="text-zinc-500">{tr("Lecture du modèle…")}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
           <Silhouette raw={loaded.raw} cut={cut} />
           <div className="flex min-w-0 flex-col gap-3">
             <label className="flex flex-col gap-1 text-zinc-400">
               <span className="text-xs uppercase tracking-wide">
-                Coupe : {Math.round(cut * 100)} % du bas retirés
+                {tr("Coupe : {0} % du bas retirés", Math.round(cut * 100))}
               </span>
               <input
                 type="range"
@@ -218,13 +220,13 @@ export default function BustPanel({
                 className="accent-violet-500"
               />
               <span className="text-xs text-zinc-500">
-                Placez la ligne sous le menton ou au cou : tout ce qui est en dessous (vêtements en feuilles) part.
+                {tr("Placez la ligne sous le menton ou au cou : tout ce qui est en dessous (vêtements en feuilles) part.")}
               </span>
             </label>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-zinc-300">
-              <label className="flex items-center gap-2" title="Socle compris. Le STL brut prend la même hauteur.">
-                Hauteur
+              <label className="flex items-center gap-2" title={tr("Socle compris. Le STL brut prend la même hauteur.")}>
+                {tr("Hauteur")}
                 <NumberField
                   ref={heightField}
                   value={heightMm}
@@ -232,7 +234,7 @@ export default function BustPanel({
                   max={heightMax}
                   onCommit={onHeightChange}
                   disabled={!!busy}
-                  aria-label="Hauteur totale du buste, socle compris, en millimètres"
+                  aria-label={tr("Hauteur totale du buste, socle compris, en millimètres")}
                   className="w-20"
                 />
                 mm
@@ -244,14 +246,14 @@ export default function BustPanel({
                   disabled={!!busy}
                   onChange={(e) => setBase(e.target.checked)}
                 />
-                Socle
+                {tr("Socle")}
               </label>
               <label className="flex items-center gap-2">
-                Finesse
+                {tr("Finesse")}
                 <select value={voxel} disabled={!!busy} onChange={(e) => setVoxel(Number(e.target.value))}>
                   {FINESSES.map((f) => (
                     <option key={f.voxel} value={f.voxel}>
-                      {f.label} ({mm(f.voxel)} mm)
+                      {tr(f.label)} ({mm(f.voxel)} mm)
                     </option>
                   ))}
                 </select>
@@ -260,7 +262,7 @@ export default function BustPanel({
 
             {coarser && !shown && (
               <p className="text-xs text-amber-300">
-                ⚠ Finesse réelle ≈ {mm(planned)} mm : modèle trop grand pour cette finesse, réduisez la hauteur.
+                {tr("⚠ Finesse réelle ≈ {0} mm : modèle trop grand pour cette finesse, réduisez la hauteur.", mm(planned))}
               </p>
             )}
 
@@ -270,7 +272,7 @@ export default function BustPanel({
                 disabled={!!busy}
                 className="rounded-lg bg-violet-600 px-3 py-2 font-medium text-white hover:bg-violet-500 disabled:opacity-50"
               >
-                {busy ? "Calcul…" : shown ? "Recalculer" : "Préparer le buste"}
+                {busy ? tr("Calcul…") : shown ? tr("Recalculer") : tr("Préparer le buste")}
               </button>
               {shown && (
                 <>
@@ -278,11 +280,11 @@ export default function BustPanel({
                     onClick={download}
                     className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-zinc-50"
                   >
-                    Télécharger le STL du buste
+                    {tr("Télécharger le STL du buste")}
                   </button>
                   <label className="flex items-center gap-2 text-zinc-400">
                     <input type="checkbox" checked={showBust} onChange={(e) => setShowBust(e.target.checked)} />
-                    Voir le buste
+                    {tr("Voir le buste")}
                   </label>
                 </>
               )}
@@ -293,22 +295,25 @@ export default function BustPanel({
                 <div className="h-1.5 flex-1 overflow-hidden rounded bg-zinc-800">
                   <div className="h-full bg-violet-500 transition-all" style={{ width: `${Math.round(busy.fraction * 100)}%` }} />
                 </div>
-                <span className="text-xs">{busy.step}</span>
+                <span className="text-xs">{tr(busy.step)}</span>
               </div>
             )}
-            {error && <p className="text-red-400">✗ {error}</p>}
+            {error && <p className="text-red-400">✗ {tr(error)}</p>}
             {shown && !busy && (
               <>
                 <p className="text-xs text-emerald-400">
-                  ✓ Volume fermé, prêt pour le slicer : {shown.size.map((v) => Math.round(v)).join(" × ")} mm,{" "}
-                  {(shown.volume / 1000).toFixed(0)} cm³ en plein, {Math.round(shown.triangles / 1000)}k triangles,
-                  finesse {mm(shown.voxel)} mm
-                  {shown.voxel > shown.settings.voxel * COARSER && " (grossie : modèle trop grand pour la finesse choisie)"}.
+                  {tr(
+                    "✓ Volume fermé, prêt pour le slicer : {0} mm, {1} cm³ en plein, {2}k triangles, finesse {3} mm",
+                    shown.size.map((v) => Math.round(v)).join(" × "),
+                    (shown.volume / 1000).toFixed(0),
+                    Math.round(shown.triangles / 1000),
+                    mm(shown.voxel),
+                  )}
+                  {shown.voxel > shown.settings.voxel * COARSER && tr(" (grossie : modèle trop grand pour la finesse choisie)")}.
                 </p>
                 {shown.removedFraction > REMOVED_NOTICE && (
                   <p className="text-xs text-amber-300">
-                    ⚠ {percent(shown.removedFraction)} du volume détaché a été retiré (débris ou accessoire) : vérifiez
-                    l&apos;aperçu.
+                    {tr("⚠ {0} du volume détaché a été retiré (débris ou accessoire) : vérifiez l'aperçu.", percent(shown.removedFraction))}
                   </p>
                 )}
               </>
@@ -323,29 +328,29 @@ export default function BustPanel({
 /** Ce que l'échec de lecture veut dire pour qui a lancé la génération. */
 function loadMessage(error: unknown, url: string): string {
   const message = error instanceof Error ? error.message : String(error);
-  if (url.startsWith("blob:")) return `Ce fichier GLB n'a pas pu être lu (${message}).`;
+  if (url.startsWith("blob:")) return tr("Ce fichier GLB n'a pas pu être lu ({0}).", message);
   // Le chargeur de three dit « fetch for "…" responded with 404: Not Found ».
   // Seul un refus net veut dire « expiré » : une panne passagère pousserait à
   // payer une nouvelle génération pour un modèle toujours là.
   const status = Number(/responded with (\d{3})\b/.exec(message)?.[1]);
-  if (status === 403 || status === 404 || status === 410) return EXPIRED_MESSAGE;
+  if (status === 403 || status === 404 || status === 410) return tr(EXPIRED_MESSAGE);
   if (status === 429 || status >= 500) {
-    return "fal.ai ne sert pas le fichier pour l'instant : réessayez dans un moment (le lien n'est pas forcément expiré).";
+    return tr("fal.ai ne sert pas le fichier pour l'instant : réessayez dans un moment (le lien n'est pas forcément expiré).");
   }
   if (/failed to fetch|networkerror|load failed/i.test(message)) {
-    return "Le modèle n'a pas pu être téléchargé depuis fal.ai : réseau coupé, ou lien expiré.";
+    return tr("Le modèle n'a pas pu être téléchargé depuis fal.ai : réseau coupé, ou lien expiré.");
   }
-  return `Lecture du modèle impossible : ${message}`;
+  return tr("Lecture du modèle impossible : {0}", message);
 }
 
 function mm(value: number | null): string {
-  return (value ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+  return (value ?? 0).toLocaleString(locale(), { maximumFractionDigits: 2 });
 }
 
 function percent(fraction: number): string {
   const value = fraction * 100;
   // Espace insécable avant « % », comme on l'écrit en français.
-  return `${value.toLocaleString("fr-FR", { maximumFractionDigits: value < 10 ? 1 : 0 })} %`;
+  return `${value.toLocaleString(locale(), { maximumFractionDigits: value < 10 ? 1 : 0 })} %`;
 }
 
 /** Vue de face du modèle, avec la ligne de coupe. */
@@ -389,7 +394,7 @@ function Silhouette({ raw, cut }: { raw: Bust.RawMesh; cut: number }) {
       width={320}
       height={320}
       className="aspect-square w-full max-w-[160px] rounded-lg bg-zinc-950"
-      aria-label="Silhouette du modèle et ligne de coupe"
+      aria-label={tr("Silhouette du modèle et ligne de coupe")}
     />
   );
 }

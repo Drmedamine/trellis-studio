@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import Generator from "@/components/Generator";
 import ThemeToggle from "@/components/ThemeToggle";
+import LangSwitch from "@/components/LangSwitch";
+import { Credits, Lede } from "@/components/Intro";
 import { accessState, type AccessState } from "@/lib/access";
 import { falConfigured } from "@/lib/fal";
 
@@ -11,12 +13,11 @@ export default function Home() {
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Trellis Studio</h1>
-          <p className="mt-1 text-zinc-400">
-            Une image → un modèle 3D texturé, avec TRELLIS.2 de Microsoft. Export GLB, et STL pour l&apos;impression.
-          </p>
+          <Lede />
         </div>
         {/* Clair ou sombre, et les autres applications 3ddeal (https://3ddeal.com/nav.js). */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <LangSwitch />
           <ThemeToggle />
           <span data-3ddeal-nav="" />
         </div>
@@ -24,17 +25,7 @@ export default function Home() {
       <Suspense fallback={<div className="h-[520px] animate-pulse rounded-2xl bg-zinc-900" />}>
         <GeneratorWithConfig />
       </Suspense>
-      <footer className="mt-12 text-xs text-zinc-500">
-        Modèle{" "}
-        <a className="underline" href="https://github.com/microsoft/TRELLIS.2" target="_blank" rel="noreferrer">
-          TRELLIS.2
-        </a>{" "}
-        (MIT), exécuté sur{" "}
-        <a className="underline" href="https://fal.ai/models/fal-ai/trellis-2" target="_blank" rel="noreferrer">
-          fal.ai
-        </a>
-        . Les images envoyées sont transmises à fal.ai.
-      </footer>
+      <Credits />
     </main>
   );
 }

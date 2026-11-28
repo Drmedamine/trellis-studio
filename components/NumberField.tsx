@@ -1,6 +1,7 @@
 "use client";
 
 import { useImperativeHandle, useState, type Ref } from "react";
+import { tr } from "@/lib/i18n";
 
 /** Pour lire la valeur au moment de s'en servir, même si le champ n'a pas encore perdu le focus. */
 export type NumberFieldHandle = {
@@ -72,7 +73,7 @@ export default function NumberField({
       value={draft ?? format(value)}
       disabled={disabled}
       aria-invalid={invalid || undefined}
-      title={`De ${format(min)} à ${format(max)}`}
+      title={tr("De {0} à {1}", format(min), format(max))}
       onFocus={(e) => e.target.select()}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => commit()}
