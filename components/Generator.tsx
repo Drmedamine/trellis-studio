@@ -23,6 +23,8 @@ import {
   type Crop,
 } from "@/lib/image";
 import NumberField, { type NumberFieldHandle } from "./NumberField";
+import Rich from "./Rich";
+import { locale, tr, useLang } from "@/lib/i18n";
 import {
   accessHeaders,
   addPendingJob,
@@ -80,6 +82,7 @@ const HEIGHT_MIN = 20;
 const HEIGHT_MAX = 400;
 
 export default function Generator({ accessState, configured }: { accessState: AccessState; configured: boolean }) {
+  useLang();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [options, setOptions] = useState<GenerateOptions>(DEFAULT_OPTIONS);
@@ -252,13 +255,13 @@ export default function Generator({ accessState, configured }: { accessState: Ac
     wakeRef.current?.();
     if (followedRef.current) refusedRef.current.add(followedRef.current);
     setHiccup(null);
-    setPhase({ kind: "stalled", message: "Suivi arrêté." });
+    setPhase({ kind: "stalled", message: tr("Suivi arrêté.") });
   }
 
   function forget(job: PendingJob) {
     if (
       !window.confirm(
-        "Oublier cette génération ? Si elle a abouti chez fal.ai, son modèle ne sera pas récupéré ici (elle a déjà été payée).",
+        tr("Oublier cette génération ? Si elle a abouti chez fal.ai, son modèle ne sera pas récupéré ici (elle a déjà été payée)."),
       )
     )
       return;
@@ -290,7 +293,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
       }
       if (!f.type.startsWith("image/")) {
         if (!activeRef.current) {
-          setPhase({ kind: "error", message: "Format non pris en charge : une image (PNG, JPEG, WebP) ou un modèle .glb." });
+          setPhase({ kind: "error", message: tr("Format non pris en charge : une image (PNG, JPEG, WebP) ou un modèle .glb.") });
         }
         return;
       }
@@ -315,7 +318,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
     if (
       pendingJobs().length > 0 &&
       !window.confirm(
-        "Une génération déjà payée n'a pas encore été récupérée : « Reprendre le suivi » la récupère sans frais.\n\nEn lancer une nouvelle coûte une génération de plus. Continuer ?",
+        tr("Une génération déjà payée n'a pas encore été récupérée : « Reprendre le suivi » la récupère sans frais.\n\nEn lancer une nouvelle coûte une génération de plus. Continuer ?"),
       )
     )
       return;
@@ -348,7 +351,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
       const answer = await call("/api/generate", { method: "POST", body: form, headers: accessHeaders() });
       if (!answer.ok) throw new Error(answer.message);
       const requestId = (answer.body as { requestId?: unknown } | undefined)?.requestId;
-      if (typeof requestId !== "string" || !requestId) throw new Error("Réponse inattendue du serveur.");
+      if (typeof requestId !== "string" || !requestId) throw new Error(tr("Réponse inattendue du serveur."));
 
       // Gardée avant toute autre chose : c'est ce qui permet de la retrouver
       // si la page se ferme maintenant.
@@ -386,7 +389,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
       downloadBlob(await glbToStl(result.glbUrl, height), `${baseName(result)}.stl`);
     } catch (error) {
       // À part de la phase : un échec d'export ne doit pas interrompre un suivi en cours.
-      setExportError(`Export STL impossible : ${error instanceof Error ? error.message : error}`);
+      setExportError(tr("Export STL impossible : {0}", error instanceof Error ? tr(error.message) : String(error)));
     } finally {
       setExporting(false);
     }
@@ -395,7 +398,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
   function dropHistoryEntry(item: Shown) {
     if (
       !window.confirm(
-        "Retirer ce modèle de l'historique ? Son lien sera oublié ici. Si vous n'avez pas téléchargé le GLB, il faudra payer une nouvelle génération.",
+        tr("Retirer ce modèle de l'historique ? Son lien sera oublié ici. Si vous n'avez pas téléchargé le GLB, il faudra payer une nouvelle génération."),
       )
     )
       return;
@@ -452,23 +455,17 @@ export default function Generator({ accessState, configured }: { accessState: Ac
       <section className="flex flex-col gap-5 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5">
         {!configured && (
           <p className="rounded-lg border border-amber-700 bg-amber-950/50 p-3 text-sm text-amber-200">
-            Génération en ligne désactivée : pas de clé fal.ai (<code>FAL_KEY</code>) sur le serveur. Vous pouvez
-            toujours déposer ici un fichier <code>.glb</code> généré sur votre PC (voir
-            <code>docs/generer-sur-mon-pc.md</code>) pour en faire un buste imprimable, sans rien payer.
+            <Rich text={tr("Génération en ligne désactivée : pas de clé fal.ai (<c>FAL_KEY</c>) sur le serveur. Vous pouvez toujours déposer ici un fichier <c>.glb</c> généré sur votre PC (voir <c>docs/generer-sur-mon-pc.md</c>) pour en faire un buste imprimable, sans rien payer.")} />
           </p>
         )}
         {blocked && (
           <p className="rounded-lg border border-amber-700 bg-amber-950/50 p-3 text-sm text-amber-200">
-            Génération désactivée : la variable <code>ACCESS_CODE</code> n&apos;est pas définie sur le serveur.
-            Sans elle, n&apos;importe qui trouvant l&apos;adresse pourrait générer à vos frais. Ajoutez-la dans
-            Vercel (Settings → Environment Variables), puis redéployez.
+            <Rich text={tr("Génération désactivée : la variable <c>ACCESS_CODE</c> n'est pas définie sur le serveur. Sans elle, n'importe qui trouvant l'adresse pourrait générer à vos frais. Ajoutez-la dans Vercel (Settings → Environment Variables), puis redéployez.")} />
           </p>
         )}
         {accessState === "open" && !isLocalHost && (
           <p className="rounded-lg border border-amber-700 bg-amber-950/50 p-3 text-sm text-amber-200">
-            Site ouvert à tous : sans <code>ACCESS_CODE</code>, chaque visiteur peut générer à vos frais.
-            Ajoutez-la dans Vercel (Settings → Environment Variables), puis redéployez — sauf si c&apos;est
-            voulu (<code>PUBLIC_ACCESS=1</code>).
+            <Rich text={tr("Site ouvert à tous : sans <c>ACCESS_CODE</c>, chaque visiteur peut générer à vos frais. Ajoutez-la dans Vercel (Settings → Environment Variables), puis redéployez — sauf si c'est voulu (<c>PUBLIC_ACCESS=1</c>).")} />
           </p>
         )}
 
@@ -506,15 +503,14 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               <label className="absolute inset-0 grid cursor-pointer place-items-center rounded-xl focus-within:ring-2 focus-within:ring-violet-500">
                 {fileInput}
                 <span className="px-5 text-center text-sm text-zinc-400">
-                  Glissez une photo ici, cliquez pour en choisir une, ou collez-la (Ctrl+V).
+                  {tr("Glissez une photo ici, cliquez pour en choisir une, ou collez-la (Ctrl+V).")}
                   <br />
                   <span className="mt-2 inline-block text-zinc-500">
-                    Pour un buste : une seule personne, visage de face, tête et épaules dans l&apos;image, lumière
-                    douce sans ombre dure, fond uni ou détouré.
+                    {tr("Pour un buste : une seule personne, visage de face, tête et épaules dans l'image, lumière douce sans ombre dure, fond uni ou détouré.")}
                   </span>
                   <br />
                   <span className="mt-2 inline-block text-zinc-500">
-                    Un fichier .glb déjà téléchargé se rouvre ici aussi, sans payer.
+                    {tr("Un fichier .glb déjà téléchargé se rouvre ici aussi, sans payer.")}
                   </span>
                 </span>
               </label>
@@ -524,7 +520,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-400">
               {crop && (
                 <label className="flex min-w-44 flex-1 items-center gap-2">
-                  Zoom
+                  {tr("Zoom")}
                   <input
                     type="range"
                     min={MIN_ZOOM}
@@ -538,7 +534,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                     }}
                     className="min-w-0 flex-1 accent-violet-500"
                   />
-                  <span className="w-9 text-end tabular-nums text-zinc-300">{crop.zoom.toFixed(1).replace(".", ",")}×</span>
+                  <span className="w-9 text-end tabular-nums text-zinc-300">{crop.zoom.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×</span>
                 </label>
               )}
               <div className="flex flex-wrap gap-2">
@@ -547,24 +543,24 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                   onClick={() => setFraming({ src: preview, crop: crop ? null : DEFAULT_CROP })}
                   className="rounded-lg border border-zinc-700 px-2.5 py-1.5 text-zinc-200 hover:border-zinc-500"
                 >
-                  {crop ? "Photo entière" : "Recadrer en carré"}
+                  {crop ? tr("Photo entière") : tr("Recadrer en carré")}
                 </button>
                 <label className="cursor-pointer rounded-lg border border-zinc-700 px-2.5 py-1.5 text-zinc-200 focus-within:ring-2 focus-within:ring-violet-500 hover:border-zinc-500">
                   {fileInput}
-                  Changer de photo
+                  {tr("Changer de photo")}
                 </label>
               </div>
               <p className="w-full text-xs text-zinc-500">
                 {crop
-                  ? "Seul le carré est envoyé : faites glisser la photo pour la placer, zoomez pour ne garder que la tête et les épaules."
-                  : "La photo entière est envoyée."}
+                  ? tr("Seul le carré est envoyé : faites glisser la photo pour la placer, zoomez pour ne garder que la tête et les épaules.")
+                  : tr("La photo entière est envoyée.")}
               </p>
             </div>
           )}
         </div>
 
         <fieldset className="grid grid-cols-2 gap-3 text-sm" disabled={busy}>
-          <Field label="Résolution">
+          <Field label={tr("Résolution")}>
             <select
               value={options.resolution}
               onChange={(e) => setOptions({ ...options, resolution: e.target.value as GenerateOptions["resolution"] })}
@@ -576,7 +572,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               ))}
             </select>
           </Field>
-          <Field label="Texture">
+          <Field label={tr("Texture")}>
             <select
               value={options.textureSize}
               onChange={(e) => setOptions({ ...options, textureSize: e.target.value as GenerateOptions["textureSize"] })}
@@ -588,7 +584,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               ))}
             </select>
           </Field>
-          <Field label="Sommets">
+          <Field label={tr("Sommets")}>
             <select
               value={options.decimationTarget}
               onChange={(e) => setOptions({ ...options, decimationTarget: Number(e.target.value) })}
@@ -600,13 +596,13 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               ))}
             </select>
           </Field>
-          <Field label="Graine (option)">
+          <Field label={tr("Graine (option)")}>
             <input
               type="number"
               min={0}
               max={MAX_SEED}
               step={1}
-              placeholder="aléatoire"
+              placeholder={tr("aléatoire")}
               value={options.seed ?? ""}
               onChange={(e) => setOptions({ ...options, seed: parseSeed(e.target.value) })}
             />
@@ -617,12 +613,12 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               checked={options.remesh}
               onChange={(e) => setOptions({ ...options, remesh: e.target.checked })}
             />
-            Remaillage propre (conseillé pour l&apos;impression 3D)
+            {tr("Remaillage propre (conseillé pour l'impression 3D)")}
           </label>
         </fieldset>
 
         {accessState === "required" && (
-          <Field label="Code d'accès">
+          <Field label={tr("Code d'accès")}>
             <input
               type="password"
               value={accessCode}
@@ -640,22 +636,21 @@ export default function Generator({ accessState, configured }: { accessState: Ac
             )}
             <div className="flex flex-col gap-2">
               <p>
-                Génération lancée {launchedAt(waiting.startedAt)} (déjà payée), pas encore récupérée. Elle a pu
-                aboutir chez fal.ai : reprendre le suivi ne coûte rien.
-                {pending.length > 1 && ` (${pending.length - 1} autre${pending.length > 2 ? "s" : ""} en attente.)`}
+                {tr("Génération lancée {0} (déjà payée), pas encore récupérée. Elle a pu aboutir chez fal.ai : reprendre le suivi ne coûte rien.", launchedAt(waiting.startedAt))}
+                {pending.length > 1 && tr(" ({0} autre(s) en attente.)", pending.length - 1)}
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => resume(waiting)}
                   className="rounded-lg bg-amber-500 px-3 py-1.5 font-medium text-black hover:bg-amber-400"
                 >
-                  Reprendre le suivi
+                  {tr("Reprendre le suivi")}
                 </button>
                 <button
                   onClick={() => forget(waiting)}
                   className="rounded-lg border border-amber-800 px-3 py-1.5 text-amber-200 hover:border-amber-600"
                 >
-                  Oublier
+                  {tr("Oublier")}
                 </button>
               </div>
             </div>
@@ -667,22 +662,22 @@ export default function Generator({ accessState, configured }: { accessState: Ac
           disabled={!file || busy || !configured || blocked}
           className="rounded-xl bg-violet-600 px-4 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {busy ? "Génération en cours…" : "Générer le modèle 3D"}
+          {busy ? tr("Génération en cours…") : tr("Générer le modèle 3D")}
         </button>
 
         <StatusLine phase={phase} elapsed={elapsed} />
         {busy && hiccup && (
           <p className="text-sm text-amber-300">
-            ⚠ {hiccup.message} Nouvel essai automatique ({hiccup.attempt}/{MAX_FAILURES})…
+            ⚠ {tr(hiccup.message)} {tr("Nouvel essai automatique ({0}/{1})…", hiccup.attempt, MAX_FAILURES)}
           </p>
         )}
         {following && (
           <button
             onClick={stopFollowing}
             className="self-start rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:border-zinc-500"
-            title="La génération continue chez fal.ai : elle reste en attente ici, à reprendre ou à oublier."
+            title={tr("La génération continue chez fal.ai : elle reste en attente ici, à reprendre ou à oublier.")}
           >
-            Arrêter le suivi
+            {tr("Arrêter le suivi")}
           </button>
         )}
       </section>
@@ -693,26 +688,26 @@ export default function Generator({ accessState, configured }: { accessState: Ac
           {result ? (
             <ModelViewer
               src={bustPreview ?? result.glbUrl}
-              alt={bustPreview ? "Buste imprimable" : "Modèle généré"}
+              alt={bustPreview ? tr("Buste imprimable") : tr("Modèle généré")}
               onError={onViewerError}
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center p-8 text-center text-sm text-zinc-500">
-              {busy ? <Spinner /> : "Le modèle apparaîtra ici."}
+              {busy ? <Spinner /> : tr("Le modèle apparaîtra ici.")}
             </div>
           )}
           {result && broken && (
             <div className="absolute inset-0 grid place-items-center bg-zinc-950/80 p-6 text-center text-sm">
               <div className="flex max-w-sm flex-col items-center gap-3">
                 <p className="text-amber-200">
-                  {local ? "Ce fichier GLB n'a pas pu être lu." : broken.expired ? EXPIRED_MESSAGE : UNREACHABLE_MESSAGE}
+                  {local ? tr("Ce fichier GLB n'a pas pu être lu.") : broken.expired ? tr(EXPIRED_MESSAGE) : tr(UNREACHABLE_MESSAGE)}
                 </p>
                 {!local && broken.expired && history.some((h) => h.id === result.id) && (
                   <button
                     onClick={() => dropHistoryEntry(result)}
                     className="rounded-lg border border-zinc-600 px-3 py-2 font-medium text-zinc-100 hover:border-zinc-400"
                   >
-                    Retirer de l&apos;historique
+                    {tr("Retirer de l'historique")}
                   </button>
                 )}
               </div>
@@ -723,7 +718,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
           <div className="flex flex-wrap items-center gap-3 border-t border-zinc-800 p-4 text-sm">
             {local ? (
               <span className="text-zinc-400">
-                Fichier ouvert : <span className="text-zinc-200">{result.fileName}</span>
+                {tr("Fichier ouvert :")} <span className="text-zinc-200">{result.fileName}</span>
               </span>
             ) : (
               <a
@@ -733,18 +728,18 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                 rel="noreferrer"
                 className="rounded-lg bg-zinc-100 px-3 py-2 font-medium text-zinc-900 hover:bg-zinc-50"
               >
-                Télécharger GLB
+                {tr("Télécharger GLB")}
               </a>
             )}
-            <label className="ms-auto flex items-center gap-2 text-zinc-400" title="La même que celle du buste.">
-              Hauteur
+            <label className="ms-auto flex items-center gap-2 text-zinc-400" title={tr("La même que celle du buste.")}>
+              {tr("Hauteur")}
               <NumberField
                 ref={heightField}
                 value={heightMm}
                 min={HEIGHT_MIN}
                 max={HEIGHT_MAX}
                 onCommit={setHeightMm}
-                aria-label="Hauteur du STL brut, en millimètres"
+                aria-label={tr("Hauteur du STL brut, en millimètres")}
                 className="w-20"
               />
               mm
@@ -754,7 +749,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               disabled={exporting}
               className="rounded-lg border border-zinc-600 px-3 py-2 font-medium text-zinc-100 hover:border-zinc-400 disabled:opacity-50"
             >
-              {exporting ? "Conversion…" : "Télécharger STL brut"}
+              {exporting ? tr("Conversion…") : tr("Télécharger STL brut")}
             </button>
             {exportError && <p className="w-full text-red-400">✗ {exportError}</p>}
           </div>
@@ -765,7 +760,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
               {describe(result)}
               {isSeed(result.seed) && (
                 <>
-                  {" · "}graine <span className="select-all font-mono text-zinc-200">{result.seed}</span>
+                  {" · "}{tr("graine")} <span className="select-all font-mono text-zinc-200">{result.seed}</span>
                 </>
               )}
             </span>
@@ -774,9 +769,9 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                 onClick={() => setOptions(settings)}
                 disabled={busy || settingsInForm}
                 className="ms-auto rounded-lg border border-zinc-700 px-2.5 py-1.5 text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
-                title="Remet ces réglages, graine comprise, dans le formulaire : avec la même photo et le même cadrage, le même modèle. Le cadrage n'est pas enregistré : replacez-le à l'identique."
+                title={tr("Remet ces réglages, graine comprise, dans le formulaire : avec la même photo et le même cadrage, le même modèle. Le cadrage n'est pas enregistré : replacez-le à l'identique.")}
               >
-                {settingsInForm ? "✓ Réglages repris" : "Reprendre ces réglages"}
+                {settingsInForm ? tr("✓ Réglages repris") : tr("Reprendre ces réglages")}
               </button>
             )}
           </div>
@@ -799,7 +794,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
 
       {history.length > 0 && (
         <section className="lg:col-span-2">
-          <h2 className="mb-3 text-sm font-medium text-zinc-400">Vos derniers modèles (dans ce navigateur)</h2>
+          <h2 className="mb-3 text-sm font-medium text-zinc-400">{tr("Vos derniers modèles (dans ce navigateur)")}</h2>
           <ul className="flex flex-wrap gap-3">
             {history.map((item) => (
               <li key={item.id} className="group relative">
@@ -812,14 +807,14 @@ export default function Generator({ accessState, configured }: { accessState: Ac
                   className={`block h-20 w-20 overflow-hidden rounded-lg border bg-zinc-900 ${
                     result?.id === item.id ? "border-violet-500" : "border-zinc-800 hover:border-zinc-600"
                   }`}
-                  title={new Date(item.createdAt).toLocaleString("fr-FR")}
+                  title={new Date(item.createdAt).toLocaleString(locale())}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.thumb} alt="" className="h-full w-full object-contain" />
                 </button>
                 <button
                   onClick={() => removeFromHistory(item.id)}
-                  aria-label="Retirer de l'historique"
+                  aria-label={tr("Retirer de l'historique")}
                   className="absolute -end-2 -top-2 hidden h-6 w-6 rounded-full bg-zinc-700 text-xs text-white group-hover:block"
                 >
                   ×
@@ -828,7 +823,7 @@ export default function Generator({ accessState, configured }: { accessState: Ac
             ))}
           </ul>
           <p className="mt-2 text-xs text-zinc-500">
-            Les fichiers sont hébergés par fal.ai et peuvent expirer : téléchargez ceux que vous voulez garder.
+            {tr("Les fichiers sont hébergés par fal.ai et peuvent expirer : téléchargez ceux que vous voulez garder.")}
           </p>
         </section>
       )}
@@ -851,31 +846,30 @@ function StatusLine({ phase, elapsed }: { phase: Phase; elapsed: number }) {
     case "idle":
       return null;
     case "uploading":
-      return <p className="text-sm text-zinc-300">Envoi de l&apos;image…{time}</p>;
+      return <p className="text-sm text-zinc-300">{tr("Envoi de l'image…")}{time}</p>;
     case "queued":
       return (
         <p className="text-sm text-zinc-300">
-          En file d&apos;attente{phase.position !== undefined ? ` (position ${phase.position + 1})` : ""}…{time}
+          {tr("En file d'attente")}{phase.position !== undefined ? tr(" (position {0})", phase.position + 1) : ""}…{time}
         </p>
       );
     case "running":
       return (
         <div className="text-sm text-zinc-300">
-          <p>Génération sur GPU…{time}</p>
+          <p>{tr("Génération sur GPU…")}{time}</p>
           {phase.logs.length > 0 && (
             <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-xs text-zinc-500">{phase.logs.join("\n")}</pre>
           )}
         </div>
       );
     case "done":
-      return <p className="text-sm text-emerald-400">✓ Modèle prêt.</p>;
+      return <p className="text-sm text-emerald-400">{tr("✓ Modèle prêt.")}</p>;
     case "error":
-      return <p className="text-sm text-red-400">✗ {phase.message}</p>;
+      return <p className="text-sm text-red-400">✗ {tr(phase.message)}</p>;
     case "stalled":
       return (
         <p className="text-sm text-amber-300">
-          ⚠ {phase.message} La génération continue peut-être chez fal.ai : « Reprendre le suivi » la récupère sans
-          frais.
+          ⚠ {tr(phase.message)} {tr("La génération continue peut-être chez fal.ai : « Reprendre le suivi » la récupère sans frais.")}
         </p>
       );
   }
@@ -885,7 +879,7 @@ function Spinner() {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-violet-500" />
-      <span>Comptez 20 s à 1 min selon la résolution.</span>
+      <span>{tr("Comptez 20 s à 1 min selon la résolution.")}</span>
     </div>
   );
 }
@@ -923,8 +917,7 @@ function FramedPhoto({
   if (failed) {
     return (
       <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-amber-200">
-        Aperçu impossible : le navigateur ne lit pas ce format (photo HEIC d&apos;iPhone ?). Enregistrez-la en JPEG,
-        puis choisissez-la de nouveau.
+        {tr("Aperçu impossible : le navigateur ne lit pas ce format (photo HEIC d'iPhone ?). Enregistrez-la en JPEG, puis choisissez-la de nouveau.")}
       </div>
     );
   }
@@ -944,7 +937,7 @@ function FramedPhoto({
       }`}
       tabIndex={crop ? 0 : undefined}
       role={crop ? "group" : undefined}
-      aria-label={crop ? "Cadrage de la photo : faites-la glisser, ou utilisez les flèches du clavier" : undefined}
+      aria-label={crop ? tr("Cadrage de la photo : faites-la glisser, ou utilisez les flèches du clavier") : undefined}
       onPointerDown={(e) => {
         // Un deuxième doigt ne reprend pas le cadrage en cours.
         if (!center || !rect || drag.current || (e.pointerType === "mouse" && e.button !== 0)) return;
@@ -987,7 +980,7 @@ function FramedPhoto({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
-        alt="Photo choisie"
+        alt={tr("Photo choisie")}
         draggable={false}
         onLoad={(e) => onSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
         onError={() => setFailed(true)}
@@ -1031,7 +1024,7 @@ async function call(url: string, init: RequestInit): Promise<Answer> {
     return {
       ok: false,
       retryable: true,
-      message: timeout ? "Le serveur met trop de temps à répondre." : "Connexion au serveur impossible (réseau coupé ?).",
+      message: timeout ? tr("Le serveur met trop de temps à répondre.") : tr("Connexion au serveur impossible (réseau coupé ?)."),
     };
   }
   let body: unknown;
@@ -1048,8 +1041,8 @@ async function call(url: string, init: RequestInit): Promise<Answer> {
       typeof err.error === "string"
         ? err.error
         : retryable
-          ? `Le serveur ne répond pas (erreur ${res.status}).`
-          : `Erreur ${res.status}.`;
+          ? tr("Le serveur ne répond pas (erreur {0}).", res.status)
+          : tr("Erreur {0}.", res.status);
     return { ok: false, retryable, status: res.status, message };
   }
   return { ok: true, body };
@@ -1070,7 +1063,7 @@ function readStatus(body: unknown): StatusResponse | null {
     case "done":
       return typeof b.glbUrl === "string" && /^https:\/\//.test(b.glbUrl) ? { status: "done", glbUrl: b.glbUrl } : null;
     case "error":
-      return { status: "error", message: typeof b.message === "string" ? b.message : "La génération a échoué chez fal.ai." };
+      return { status: "error", message: typeof b.message === "string" ? b.message : tr("La génération a échoué chez fal.ai.") };
   }
   return null;
 }
@@ -1110,7 +1103,7 @@ async function poll(requestId: string, firstDelay: number, hooks: PollHooks): Pr
       });
       if (answer.ok) status = readStatus(answer.body);
       // Une réponse 200 illisible (portail Wi-Fi, proxy) ne dit rien du travail : on retente.
-      failure = answer.ok ? { retryable: true, message: "Réponse inattendue du serveur." } : answer;
+      failure = answer.ok ? { retryable: true, message: tr("Réponse inattendue du serveur.") } : answer;
     } catch (error) {
       failure = { retryable: true, message: error instanceof Error ? error.message : String(error) };
     }
@@ -1123,7 +1116,7 @@ async function poll(requestId: string, firstDelay: number, hooks: PollHooks): Pr
       if (status.status === "error") return { kind: "failed", message: status.message };
       // Un état inconnu, ou une file bloquée chez fal, répond « en attente » sans fin.
       if (Date.now() >= deadline) {
-        return { kind: "stalled", message: `Génération toujours pas terminée après ${FOLLOW_MAX_MIN} min de suivi.` };
+        return { kind: "stalled", message: tr("Génération toujours pas terminée après {0} min de suivi.", FOLLOW_MAX_MIN) };
       }
       hooks.onStatus(status);
       continue;
@@ -1134,7 +1127,7 @@ async function poll(requestId: string, firstDelay: number, hooks: PollHooks): Pr
     }
     failures++;
     if (failures >= MAX_FAILURES) {
-      return { kind: "stalled", message: `Suivi interrompu après ${MAX_FAILURES} essais : ${failure.message}` };
+      return { kind: "stalled", message: tr("Suivi interrompu après {0} essais : {1}", MAX_FAILURES, tr(failure.message)) };
     }
     hooks.onRetry(failures, failure.message);
     wait = Math.min(RETRY_MAX_MS, POLL_MS * 2 ** (failures - 1));
@@ -1188,10 +1181,10 @@ function sameOptions(a: GenerateOptions, b: SentOptions): boolean {
 function describe(item: HistoryItem): string {
   const parts: string[] = [];
   if (item.resolution) parts.push(`${item.resolution}³`);
-  if (item.textureSize) parts.push(`texture ${item.textureSize} px`);
-  if (typeof item.decimationTarget === "number") parts.push(`${item.decimationTarget / 1000}k sommets`);
-  if (typeof item.remesh === "boolean") parts.push(item.remesh ? "remaillé" : "sans remaillage");
-  if (!isSeed(item.seed)) parts.push("graine non enregistrée");
+  if (item.textureSize) parts.push(tr("texture {0} px", item.textureSize));
+  if (typeof item.decimationTarget === "number") parts.push(tr("{0}k sommets", item.decimationTarget / 1000));
+  if (typeof item.remesh === "boolean") parts.push(item.remesh ? tr("remaillé") : tr("sans remaillage"));
+  if (!isSeed(item.seed)) parts.push(tr("graine non enregistrée"));
   return parts.join(" · ");
 }
 
@@ -1210,9 +1203,9 @@ function baseName(item: Shown): string {
 
 function launchedAt(t: number): string {
   const date = new Date(t);
-  const day = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
-  const hour = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return `le ${day} à ${hour}`;
+  const day = date.toLocaleDateString(locale(), { day: "2-digit", month: "2-digit" });
+  const hour = date.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
+  return tr("le {0} à {1}", day, hour);
 }
 
 function duration(seconds: number): string {
