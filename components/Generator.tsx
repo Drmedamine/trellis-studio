@@ -841,6 +841,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function StatusLine({ phase, elapsed }: { phase: Phase; elapsed: number }) {
+  useLang();
   const time = elapsed ? ` · ${duration(elapsed)}` : "";
   switch (phase.kind) {
     case "idle":
@@ -876,6 +877,7 @@ function StatusLine({ phase, elapsed }: { phase: Phase; elapsed: number }) {
 }
 
 function Spinner() {
+  useLang();
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-violet-500" />
@@ -909,6 +911,7 @@ function FramedPhoto({
   onSize: (size: PhotoSize) => void;
   onCrop: (crop: Crop) => void;
 }) {
+  useLang();
   const [failed, setFailed] = useState(false);
   const drag = useRef<Drag | null>(null);
   const rect = crop && size ? cropRect(size.w, size.h, crop) : null;

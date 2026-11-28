@@ -8,7 +8,7 @@
  * React rejoue la page du serveur (en français) avant de passer à la langue choisie ; lire le stockage directement
  * ferait diverger les deux. Chaque composant qui affiche du texte appelle donc `useLang()` en tête.
  */
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
 
 export type Lang = "fr" | "en" | "ar";
 export const LANGS: readonly Lang[] = ["fr", "en", "ar"];
@@ -37,7 +37,10 @@ export function resolvedLang(): Lang {
   return nav.startsWith("fr") ? "fr" : nav.startsWith("ar") ? "ar" : "en";
 }
 
-const serverLang = (): Lang => "fr";
+/** La langue imposée par l'adresse (/en, /ar), ou null à la racine, qui suit le choix de la personne. */
+export const PageLang = createContext<Lang | null>(null);
+/** L'adresse de chaque langue : le français à la racine, pour que les liens déjà partagés ne changent pas. */
+export const pathOf = (lang: Lang) => (lang === "fr" ? "/" : `/${lang}`);
 
 function subscribeLang(rappel: () => void): () => void {
   abonnes.add(rappel);
@@ -46,7 +49,10 @@ function subscribeLang(rappel: () => void): () => void {
 
 /** La langue affichée ; à appeler en tête de tout composant qui affiche du texte. */
 export function useLang(): Lang {
-  const lang = useSyncExternalStore(subscribeLang, resolvedLang, serverLang);
+  // Une adresse préfixée prime sur le stockage, au serveur comme dans le navigateur : la page /en est rendue en anglais
+  // pour les moteurs, et reste en anglais pour qui l'ouvre, quel que soit son choix ailleurs.
+  const page = useContext(PageLang);
+  const lang = useSyncExternalStore(subscribeLang, () => page ?? resolvedLang(), () => page ?? "fr");
   // Sans danger : tous les composants d'un même rendu lisent le même instantané, donc écrivent la même langue.
   retenir(lang);
   return lang;
@@ -72,7 +78,7 @@ export function saveLang(lang: Lang) {
 
 /** `lang` et `dir` sur <html> avant la première peinture : une page arabe ne se peint pas d'abord de gauche à droite. */
 export const LANG_SCRIPT =
-  'try{var m=document.cookie.match(/(?:^|;\\s*)dd_lang=(fr|en|ar)/),l=m?m[1]:localStorage.getItem("dd_lang");' +
+  'try{var p=location.pathname.match(/^\\/(en|ar)(\\/|$)/),m=document.cookie.match(/(?:^|;\\s*)dd_lang=(fr|en|ar)/),l=p?p[1]:m?m[1]:localStorage.getItem("dd_lang");' +
   'if(l!=="fr"&&l!=="en"&&l!=="ar"){var n=navigator.language||"";l=n.indexOf("fr")===0?"fr":n.indexOf("ar")===0?"ar":"en"}' +
   'document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr"}catch(e){}';
 
