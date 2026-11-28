@@ -3,7 +3,7 @@ import { Geist } from "next/font/google";
 import Script from "next/script";
 import ThemeScript from "@/components/ThemeScript";
 import LangScript from "@/components/LangScript";
-import { SITE_URL } from "@/lib/site";
+import { LANGUAGE_ALTERNATES, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Trellis Studio — image vers 3D",
   description: DESCRIPTION,
-  alternates: { canonical: "/" },
+  alternates: { canonical: "/", languages: LANGUAGE_ALTERNATES },
   openGraph: {
     type: "website",
     url: "/",

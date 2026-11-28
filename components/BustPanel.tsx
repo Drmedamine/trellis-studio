@@ -355,6 +355,7 @@ function percent(fraction: number): string {
 
 /** Vue de face du modèle, avec la ligne de coupe. */
 function Silhouette({ raw, cut }: { raw: Bust.RawMesh; cut: number }) {
+  useLang();
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
