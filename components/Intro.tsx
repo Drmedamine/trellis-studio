@@ -14,6 +14,8 @@ export function Credits() {
   const [avant, entre, apres] = tr("Modèle {0} (MIT), exécuté sur {1}. Les images envoyées sont transmises à fal.ai.").split(/\{(?:0|1)\}/);
   return (
     <footer className="mt-12 text-xs text-zinc-500">
+      {/* Le pied de page commun aux sites 3ddeal (posé par https://3ddeal.com/nav.js). */}
+      <div data-3ddeal-footer="" className="mb-3 border-t border-zinc-800" />
       {avant}
       <a className="underline" href="https://github.com/microsoft/TRELLIS.2" target="_blank" rel="noreferrer">
         TRELLIS.2
