@@ -19,6 +19,7 @@
   --color-zinc-200: oklch(27.4% 0.006 286.033); --color-zinc-800: oklch(92% 0.004 286.32);
   --color-zinc-300: oklch(37% 0.013 285.805); --color-zinc-700: oklch(87.1% 0.006 286.286);
   --color-zinc-400: oklch(44.2% 0.017 285.786); --color-zinc-600: oklch(70.5% 0.015 286.067);
+  --color-zinc-500: oklch(49% 0.016 285.9); /* le gris moyen ne se retourne pas : on le fonce pour tenir 4,5:1 sur le fond clair */
   --color-amber-50: oklch(27.9% 0.077 45.635); --color-amber-950: oklch(98.7% 0.022 95.277);
   --color-amber-100: oklch(41.4% 0.112 45.904); --color-amber-900: oklch(96.2% 0.059 95.617);
   --color-amber-200: oklch(47.3% 0.137 46.201); --color-amber-800: oklch(92.4% 0.12 95.746);
@@ -45,6 +46,7 @@
   --color-zinc-200: oklch(27.4% 0.006 286.033); --color-zinc-800: oklch(92% 0.004 286.32);
   --color-zinc-300: oklch(37% 0.013 285.805); --color-zinc-700: oklch(87.1% 0.006 286.286);
   --color-zinc-400: oklch(44.2% 0.017 285.786); --color-zinc-600: oklch(70.5% 0.015 286.067);
+  --color-zinc-500: oklch(49% 0.016 285.9); /* le gris moyen ne se retourne pas : on le fonce pour tenir 4,5:1 sur le fond clair */
   --color-amber-50: oklch(27.9% 0.077 45.635); --color-amber-950: oklch(98.7% 0.022 95.277);
   --color-amber-100: oklch(41.4% 0.112 45.904); --color-amber-900: oklch(96.2% 0.059 95.617);
   --color-amber-200: oklch(47.3% 0.137 46.201); --color-amber-800: oklch(92.4% 0.12 95.746);
